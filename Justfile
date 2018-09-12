@@ -22,6 +22,10 @@ run ASGN +ARGS="":
 test:
 	cargo test --all
 
+build-wasm:
+	EMMAKEN_CFLAGS="-s USE_SDL=2" cargo build --target asmjs-unknown-emscripten
+	EMMAKEN_CFLAGS="-s USE_SDL=2" cargo build --target wasm32-unknown-emscripten
+
 open-docs:
 	cargo doc --open -p common
 outdated-deps:

@@ -6,112 +6,27 @@ extern crate log;
 #[macro_use]
 extern crate structopt;
 
-use std::path::PathBuf;
+mod bounds;
+mod event;
+mod init;
+mod vertex;
 
 use common::{
     failure::Error,
     glium::{
-        index::{NoIndices, PrimitiveType},
-        texture::Texture2d,
         uniforms::{MagnifySamplerFilter, SamplerWrapFunction},
-        Program, Surface, VertexBuffer,
+        Surface,
     },
     glium_sdl2::SDL2Facade,
-    image::open as open_image,
     run_wrapper,
-    sdl2::{event::Event, keyboard::Scancode, Sdl},
+    sdl2::Sdl,
 };
 
-#[derive(Debug, StructOpt)]
-struct Args {
-    #[structopt(parse(from_os_str))]
-    input: PathBuf,
-}
-
-struct State {
-    running: bool,
-    indices: NoIndices,
-    matrix: [[f32; 4]; 4],
-    program: Program,
-    texture: Texture2d,
-    vbo: VertexBuffer<Vertex>,
-}
-
-#[derive(Clone, Copy, Debug)]
-struct Vertex {
-    pos: [f32; 2],
-    color: [f32; 3],
-    uv: [f32; 2],
-}
-
-implement_vertex!(Vertex, pos, color, uv);
-
-static VERTICES: &[Vertex] = &[
-    Vertex {
-        pos: [-1.0, -1.0],
-        color: [0.0, 1.0, 0.0],
-        uv: [0.0, 0.0],
-    },
-    Vertex {
-        pos: [-1.0, 1.0],
-        color: [0.0, 1.0, 0.0],
-        uv: [0.0, 1.0],
-    },
-    Vertex {
-        pos: [1.0, 1.0],
-        color: [0.0, 1.0, 0.0],
-        uv: [1.0, 1.0],
-    },
-    Vertex {
-        pos: [1.0, 1.0],
-        color: [0.0, 1.0, 0.0],
-        uv: [1.0, 1.0],
-    },
-    Vertex {
-        pos: [1.0, -1.0],
-        color: [0.0, 1.0, 0.0],
-        uv: [1.0, 0.0],
-    },
-    Vertex {
-        pos: [-1.0, -1.0],
-        color: [0.0, 1.0, 0.0],
-        uv: [0.0, 0.0],
-    },
-];
-
-const MATRIX_DEFAULT: [[f32; 4]; 4] = [
-    [0.5, 0.0, 0.0, 0.0],
-    [0.0, 0.5, 0.0, 0.0],
-    [0.0, 0.0, 0.0, 0.0],
-    [0.0, 0.0, 0.0, 1.0],
-];
+use event::on_event;
+use init::{on_init, State};
 
 fn main() {
     run_wrapper("asgn0", on_init, on_loop, on_event)
-}
-
-fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<State, Error> {
-    const VERT_SHADER_SRC: &str = include_str!("shader.vert");
-    const FRAG_SHADER_SRC: &str = include_str!("shader.frag");
-
-    let image = open_image(args.input)?.to_rgba();
-    let image_dimensions = image.dimensions();
-    let image =
-        glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    let texture = glium::texture::Texture2d::new(&*display, image)?;
-
-    let vbo = VertexBuffer::new(&*display, VERTICES)?;
-    let indices = NoIndices(PrimitiveType::TrianglesList);
-    let program = Program::from_source(&*display, VERT_SHADER_SRC, FRAG_SHADER_SRC, None).unwrap();
-
-    Ok(State {
-        running: true,
-        program,
-        indices,
-        matrix: MATRIX_DEFAULT,
-        texture,
-        vbo,
-    })
 }
 
 fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<bool, Error> {
@@ -135,17 +50,4 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
 
     target.finish()?;
     Ok(state.running)
-}
-
-fn on_event(ev: Event, state: &mut State, _: &mut Sdl, _: &mut SDL2Facade) -> Result<(), Error> {
-    match ev {
-        Event::KeyDown { scancode, .. } => match scancode {
-            Some(Scancode::Q) => {
-                state.running = false;
-            }
-            _ => {}
-        },
-        _ => debug!("Unknown event {:?}", ev),
-    }
-    Ok(())
 }

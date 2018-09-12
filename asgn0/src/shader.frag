@@ -5,9 +5,7 @@ uniform sampler2D tex0;
 in vec3 link_color;
 in vec2 link_uv;
 
-out vec3 color;
-
 void main() {
-	color = texture(tex0, link_uv).rgb;
+	gl_FragColor = vec4(texture(tex0, link_uv).rgb, 1.0);
 	// TODO: Blend in link_color
 }

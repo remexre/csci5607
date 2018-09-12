@@ -13,6 +13,7 @@ use common::{
     glium::{
         index::{NoIndices, PrimitiveType},
         texture::Texture2d,
+        uniforms::{MagnifySamplerFilter, SamplerWrapFunction},
         Program, Surface, VertexBuffer,
     },
     glium_sdl2::SDL2Facade,
@@ -30,6 +31,7 @@ struct Args {
 struct State {
     running: bool,
     indices: NoIndices,
+    matrix: [[f32; 4]; 4],
     program: Program,
     texture: Texture2d,
     vbo: VertexBuffer<Vertex>,
@@ -38,37 +40,50 @@ struct State {
 #[derive(Clone, Copy, Debug)]
 struct Vertex {
     pos: [f32; 2],
-    //color: [f32; 3],
+    color: [f32; 3],
     uv: [f32; 2],
 }
 
-implement_vertex!(Vertex, pos, uv);
+implement_vertex!(Vertex, pos, color, uv);
 
 static VERTICES: &[Vertex] = &[
     Vertex {
         pos: [-1.0, -1.0],
+        color: [0.0, 1.0, 0.0],
         uv: [0.0, 0.0],
     },
     Vertex {
         pos: [-1.0, 1.0],
+        color: [0.0, 1.0, 0.0],
         uv: [0.0, 1.0],
     },
     Vertex {
         pos: [1.0, 1.0],
+        color: [0.0, 1.0, 0.0],
         uv: [1.0, 1.0],
     },
     Vertex {
         pos: [1.0, 1.0],
+        color: [0.0, 1.0, 0.0],
         uv: [1.0, 1.0],
     },
     Vertex {
         pos: [1.0, -1.0],
+        color: [0.0, 1.0, 0.0],
         uv: [1.0, 0.0],
     },
     Vertex {
         pos: [-1.0, -1.0],
+        color: [0.0, 1.0, 0.0],
         uv: [0.0, 0.0],
     },
+];
+
+const MATRIX_DEFAULT: [[f32; 4]; 4] = [
+    [0.5, 0.0, 0.0, 0.0],
+    [0.0, 0.5, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 1.0],
 ];
 
 fn main() {
@@ -93,6 +108,7 @@ fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<State, E
         running: true,
         program,
         indices,
+        matrix: MATRIX_DEFAULT,
         texture,
         vbo,
     })
@@ -100,7 +116,10 @@ fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<State, E
 
 fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<bool, Error> {
     let uniforms = uniform!{
-        tex0: &state.texture,
+        matrix: state.matrix,
+        tex0: state.texture.sampled()
+            .wrap_function(SamplerWrapFunction::Repeat)
+            .magnify_filter(MagnifySamplerFilter::Nearest),
     };
 
     let mut target = display.draw();

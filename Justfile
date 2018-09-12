@@ -17,7 +17,7 @@ clippy:
 	cargo +nightly clippy --all
 doc:
 	cargo doc --all
-run ASGN +ARGS:
+run ASGN +ARGS="":
 	cargo run --manifest-path={{ASGN}}/Cargo.toml -- {{ARGS}}
 test:
 	cargo test --all

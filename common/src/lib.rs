@@ -13,7 +13,7 @@ use std::process::exit;
 
 use failure::{err_msg, Error};
 use glium_sdl2::{DisplayBuild, SDL2Facade};
-use sdl2::{event::Event, Sdl};
+use sdl2::{event::Event, video::GLProfile, Sdl};
 use structopt::{
     clap::{App, Arg, ArgMatches},
     StructOpt,
@@ -48,6 +48,10 @@ pub fn run_wrapper<FE, FI, FL, T, U>(
     let run = || -> Result<(), Error> {
         let mut sdl = sdl2::init().map_err(err_msg)?;
         let video_subsystem = sdl.video().map_err(err_msg)?;
+        let gl_attrs = video_subsystem.gl_attr();
+        gl_attrs.set_context_major_version(3);
+        gl_attrs.set_context_minor_version(2);
+        gl_attrs.set_context_profile(GLProfile::Core);
         let mut display = video_subsystem
             .window(name, 800, 600)
             .resizable()

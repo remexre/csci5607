@@ -7,6 +7,7 @@ pub extern crate failure;
 pub extern crate glium;
 pub extern crate glium_sdl2;
 pub extern crate image;
+pub extern crate nalgebra;
 pub extern crate sdl2;
 
 use std::process::exit;

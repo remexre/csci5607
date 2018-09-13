@@ -6,6 +6,7 @@ in vec3 link_color;
 in vec2 link_uv;
 
 void main() {
-	gl_FragColor = vec4(texture(tex0, link_uv).rgb, 1.0);
+	//gl_FragColor = vec4(texture(tex0, link_uv).rgb, 1.0);
+	gl_FragColor = vec4(1,0,0,1);
 	// TODO: Blend in link_color
 }

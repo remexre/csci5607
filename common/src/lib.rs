@@ -10,6 +10,10 @@ pub extern crate image;
 pub extern crate nalgebra;
 pub extern crate sdl2;
 
+pub mod helpers;
+#[macro_use]
+mod macros;
+
 use std::process::exit;
 
 use failure::{err_msg, Error};

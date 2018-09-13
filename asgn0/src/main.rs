@@ -1,6 +1,9 @@
+#[macro_use]
 extern crate common;
 #[macro_use]
 extern crate glium;
+#[macro_use]
+extern crate lazy_static;
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -30,8 +33,10 @@ fn main() {
 }
 
 fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<bool, Error> {
+    let mat = the!([[f32; 3]; 3], state.proj.into());
+    println!("{:?}", mat);
     let uniforms = uniform!{
-        matrix: state.matrix,
+        proj: [[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.5]],
         tex0: state.texture.sampled()
             .wrap_function(SamplerWrapFunction::Repeat)
             .magnify_filter(MagnifySamplerFilter::Nearest),
@@ -39,7 +44,7 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
 
     let mut target = display.draw();
 
-    target.clear_color(0.0, 0.0, 1.0, 1.0);
+    target.clear_color(1.0, 1.0, 1.0, 1.0);
     target.draw(
         &state.vbo,
         &state.indices,

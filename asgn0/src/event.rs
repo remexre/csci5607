@@ -3,8 +3,13 @@ use std::f32::consts::PI;
 use common::{
     failure::Error,
     glium_sdl2::SDL2Facade,
-    nalgebra::{Matrix3, RowVector3},
-    sdl2::{event::Event, keyboard::Scancode, mouse::MouseButton, Sdl},
+    nalgebra::{Matrix2, RowVector2},
+    sdl2::{
+        event::{Event, WindowEvent},
+        keyboard::Scancode,
+        mouse::MouseButton,
+        Sdl,
+    },
 };
 
 use init::State;
@@ -53,7 +58,7 @@ impl SquarePart {
             (AxisPart::Center, _) => SquarePart::Edge,
             _ => SquarePart::Corner,
         };
-        let angle = (y / x).atan();
+        let angle = y.atan2(x);
         Some((part, angle))
     }
 }
@@ -82,24 +87,43 @@ pub fn on_event(
         Event::MouseButtonDown {
             x, y, mouse_btn, ..
         } => if mouse_btn == MouseButton::Left {
-            if let Some((x, y)) = transform_coords(x, y, display.window().size(), &*state) {
-                state.drag = SquarePart::from_coords(x, y);
-            }
+            print!("({}, {}) -> ", x, y);
+            let (x, y) = transform_coords(x, y, display.window().size(), &*state);
+            println!("({}, {})", x, y);
+            state.drag = SquarePart::from_coords(x, y);
         },
         Event::MouseButtonUp { mouse_btn, .. } if mouse_btn == MouseButton::Left => {
             state.drag = None;
         }
-        Event::MouseMotion { xrel, yrel, .. } => {
-            let (x, y) = display.window().size();
-            let xrel = xrel as f32 / x as f32;
-            let yrel = yrel as f32 / y as f32;
+        Event::MouseMotion {
+            x, y, xrel, yrel, ..
+        } => {
+            let (xmax, ymax) = display.window().size();
+            let xrel = xrel as f32 / xmax as f32;
+            let yrel = yrel as f32 / ymax as f32;
+            let (x, y) = (x as f32, y as f32);
             if let Some((part, angle)) = state.drag {
                 match part {
-                    SquarePart::Corner => unimplemented!(),
-                    SquarePart::Edge => unimplemented!(),
-                    SquarePart::Middle => unimplemented!(),
+                    SquarePart::Corner => {
+                        let dir = (y.atan2(x) - yrel.atan2(xrel)).signum();
+                        state.rotation += -x.signum() * dir / 60.0;
+                    }
+                    SquarePart::Edge => {
+                        let mag = (2.0 * (angle - yrel.atan2(xrel)).abs() / PI) - 1.0;
+                        state.scale *= 1.0 + mag / 50.0;
+                    }
+                    SquarePart::Middle => {
+                        state.offset.0 += 2.0 * xrel;
+                        state.offset.1 += -2.0 * yrel;
+                    }
                 }
             }
+        }
+        Event::Window {
+            win_event: WindowEvent::Resized(w, h),
+            ..
+        } => {
+            state.aspect_ratio = w as f32 / h as f32;
         }
         _ => debug!("Unhandled event {:?}", ev),
     }
@@ -109,7 +133,7 @@ pub fn on_event(
 /// Transforms screen coordinates to coordinates on the square, with an OpenGL-like coordinate
 /// space (i.e. (0, 0) at center, (1, 1) at top right). If the coordinates are invalid or don't
 /// refer to a point on the square, returns None.
-fn transform_coords(x: i32, y: i32, max: (u32, u32), state: &State) -> Option<(f32, f32)> {
+fn transform_coords(x: i32, y: i32, max: (u32, u32), state: &State) -> (f32, f32) {
     let x = x as f32;
     let y = y as f32;
     let max_x = max.0 as f32;
@@ -119,15 +143,19 @@ fn transform_coords(x: i32, y: i32, max: (u32, u32), state: &State) -> Option<(f
     let x = (2.0 * x / max_x) - 1.0;
     let y = 1.0 - (2.0 * y / max_y);
 
-    //let xy_ = RowVector3::from_iterator([x, y, 1.0].into_iter().cloned()) * state.proj_inv;
-    let xy_ = RowVector3::from_iterator([x, y, 1.0].into_iter().cloned());
-    let x = xy_[0];
-    let y = xy_[1];
-    // xy_[2] should be the size of the square, I think?
-
-    if -1.0 <= x && x <= 1.0 && -1.0 <= y && y <= 1.0 {
-        Some((x, y))
-    } else {
-        None
-    }
+    // Untransform.
+    let xy = RowVector2::from_iterator([x, y / state.aspect_ratio].into_iter().cloned());
+    let rot = Matrix2::from_iterator(
+        [
+            state.rotation.cos(),
+            state.rotation.sin(),
+            -state.rotation.sin(),
+            state.rotation.cos(),
+        ]
+            .into_iter()
+            .cloned(),
+    );
+    let off = RowVector2::from_iterator([state.offset.0, state.offset.1].into_iter().cloned());
+    let xy = ((xy - off) / state.scale) * rot;
+    (xy[0], xy[1])
 }

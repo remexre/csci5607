@@ -9,7 +9,6 @@ use common::{
     },
     glium_sdl2::SDL2Facade,
     helpers::load_texture,
-    nalgebra::Matrix3,
     sdl2::Sdl,
 };
 
@@ -27,6 +26,7 @@ pub struct State {
     pub drag: Option<(SquarePart, f32)>,
     pub running: bool,
 
+    pub aspect_ratio: f32,
     pub indices: NoIndices,
     pub program: Program,
     pub texture: Texture2d,
@@ -43,7 +43,7 @@ impl State {
         self.drag = None;
         self.offset = (0.0, 0.0);
         self.rotation = 0.0;
-        self.scale = 1.0;
+        self.scale = 0.5;
     }
 }
 
@@ -55,11 +55,13 @@ pub fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<Stat
     let indices = NoIndices(PrimitiveType::TrianglesList);
     let program = Program::from_source(&*display, VERT_SHADER_SRC, FRAG_SHADER_SRC, None).unwrap();
 
+    let (w, h) = display.window().size();
     Ok(State {
         animate: false,
         drag: None,
         running: true,
 
+        aspect_ratio: w as f32 / h as f32,
         indices,
         program,
         texture: load_texture(args.input, &*display)?,
@@ -67,6 +69,6 @@ pub fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<Stat
 
         offset: (0.0, 0.0),
         rotation: 0.0,
-        scale: 1.0,
+        scale: 0.5,
     })
 }

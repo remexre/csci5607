@@ -1,5 +1,6 @@
 #version 150 core
 
+uniform float aspect_ratio;
 uniform vec2  off;
 uniform float rotation;
 uniform float scale;
@@ -15,7 +16,7 @@ void main() {
 	link_color = color;
 	link_uv = uv;
 
-	vec2 xy = pos * scale + off;
 	mat2 rot = mat2(cos(rotation), -sin(rotation), sin(rotation), cos(rotation));
-	gl_Position = vec4(xy * rot, 0.0, 1.0);
+	vec2 xy = pos * rot * scale + off;
+	gl_Position = vec4(xy.x, xy.y * aspect_ratio, 0.0, 1.0);
 }

@@ -1,9 +1,6 @@
-#[macro_use]
 extern crate common;
 #[macro_use]
 extern crate glium;
-#[macro_use]
-extern crate lazy_static;
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -35,6 +32,7 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
     // TODO: Process animation.
 
     let uniforms = uniform!{
+        aspect_ratio: state.aspect_ratio,
         off: [state.offset.0, state.offset.1],
         rotation: state.rotation,
         scale: state.scale,
@@ -53,8 +51,7 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
             &state.program,
             &uniforms,
             &Default::default(),
-        )
-        .unwrap();
+        ).unwrap();
 
     target.finish()?;
     Ok(state.running)

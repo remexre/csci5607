@@ -1,6 +1,8 @@
 #version 150 core
 
-uniform mat3 matrix;
+uniform vec2  off;
+uniform float rotation;
+uniform float scale;
 
 in vec2 pos;
 in vec3 color;
@@ -13,8 +15,7 @@ void main() {
 	link_color = color;
 	link_uv = uv;
 
-	mat3 matrix2 = matrix;
-	//matrix2[0] = vec3(0.95, 0.05, 0);
-	//matrix2[1] = vec3(0.05, 0.95, 0);
-	gl_Position = vec4(vec3(pos, 0) * matrix2, 1.0);
+	vec2 xy = pos * scale + off;
+	mat2 rot = mat2(cos(rotation), -sin(rotation), sin(rotation), cos(rotation));
+	gl_Position = vec4(xy * rot, 0.0, 1.0);
 }

@@ -53,6 +53,12 @@ pub fn run_wrapper<FE, FI, FL, T, U>(
     let run = || -> Result<(), Error> {
         let mut sdl = sdl2::init().map_err(err_msg)?;
         let video_subsystem = sdl.video().map_err(err_msg)?;
+        if !video_subsystem.gl_set_swap_interval(-1) {
+            debug!("Adaptive VSync not supported.");
+            if !video_subsystem.gl_set_swap_interval(1) {
+                warn!("Could not enable VSync!");
+            }
+        }
         let gl_attrs = video_subsystem.gl_attr();
         gl_attrs.set_context_major_version(3);
         gl_attrs.set_context_minor_version(2);

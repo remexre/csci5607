@@ -9,7 +9,6 @@ extern crate log;
 #[macro_use]
 extern crate structopt;
 
-mod bounds;
 mod event;
 mod init;
 mod vertex;
@@ -33,10 +32,12 @@ fn main() {
 }
 
 fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<bool, Error> {
-    let mat = the!([[f32; 3]; 3], state.proj.into());
-    println!("{:?}", mat);
+    // TODO: Process animation.
+
     let uniforms = uniform!{
-        proj: [[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.5]],
+        off: [state.offset.0, state.offset.1],
+        rotation: state.rotation,
+        scale: state.scale,
         tex0: state.texture.sampled()
             .wrap_function(SamplerWrapFunction::Repeat)
             .magnify_filter(MagnifySamplerFilter::Nearest),
@@ -45,13 +46,15 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
     let mut target = display.draw();
 
     target.clear_color(1.0, 1.0, 1.0, 1.0);
-    target.draw(
-        &state.vbo,
-        &state.indices,
-        &state.program,
-        &uniforms,
-        &Default::default(),
-    )?;
+    target
+        .draw(
+            &state.vbo,
+            &state.indices,
+            &state.program,
+            &uniforms,
+            &Default::default(),
+        )
+        .unwrap();
 
     target.finish()?;
     Ok(state.running)

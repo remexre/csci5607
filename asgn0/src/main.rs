@@ -29,8 +29,6 @@ fn main() {
 }
 
 fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<bool, Error> {
-    // TODO: Process animation.
-
     let uniforms = uniform!{
         aspect_ratio: state.aspect_ratio,
         brightness: state.brightness,

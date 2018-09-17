@@ -71,7 +71,6 @@ pub fn on_event(
 ) -> Result<(), Error> {
     match ev {
         Event::KeyDown { scancode, .. } => match scancode {
-            Some(Scancode::A) => state.animate = !state.animate,
             Some(Scancode::C) => state.color = !state.color,
             Some(Scancode::L) => state.clear = !state.clear,
             Some(Scancode::Q) => state.running = false,

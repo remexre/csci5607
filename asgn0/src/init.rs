@@ -22,7 +22,6 @@ pub struct Args {
 }
 
 pub struct State {
-    pub animate: bool,
     pub brightness: f32,
     pub clear: bool,
     pub color: bool,
@@ -63,7 +62,6 @@ pub fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<Stat
 
     let (w, h) = display.window().size();
     Ok(State {
-        animate: false,
         brightness: 1.0,
         clear: true,
         color: true,

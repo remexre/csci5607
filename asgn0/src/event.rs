@@ -3,6 +3,7 @@ use std::f32::consts::PI;
 use common::{
     failure::Error,
     glium_sdl2::SDL2Facade,
+    helpers::magnitude,
     nalgebra::{Matrix2, RowVector2},
     sdl2::{
         event::{Event, WindowEvent},
@@ -37,8 +38,8 @@ impl AxisPart {
 
 #[derive(Clone, Copy, Debug)]
 pub enum SquarePart {
-    Corner,
-    Edge,
+    Corner(f32),
+    Edge(f32),
     Middle,
 }
 
@@ -49,14 +50,24 @@ impl SquarePart {
 
     /// Gets the part of the square corresponding to the given coordinates on the square.
     pub fn from_coords(x: f32, y: f32) -> Option<(SquarePart, f32)> {
+        use self::AxisPart::*;
+        use self::SquarePart::*;
+
         let x_edge = AxisPart::from_coord(x)?;
         let y_edge = AxisPart::from_coord(y)?;
 
         let part = match (x_edge, y_edge) {
-            (AxisPart::Center, AxisPart::Center) => SquarePart::Middle,
-            (_, AxisPart::Center) => SquarePart::Edge,
-            (AxisPart::Center, _) => SquarePart::Edge,
-            _ => SquarePart::Corner,
+            (Center, Center) => Middle,
+
+            (Minus, Center) => Edge(PI),
+            (Plus, Center) => Edge(0.0),
+            (Center, Minus) => Edge(-PI / 2.0),
+            (Center, Plus) => Edge(PI / 2.0),
+
+            (Minus, Minus) => Corner(PI * 7.0 / 4.0),
+            (Minus, Plus) => Corner(PI * 5.0 / 4.0),
+            (Plus, Minus) => Corner(PI / 4.0),
+            (Plus, Plus) => Corner(PI * 3.0 / 4.0),
         };
         let angle = y.atan2(x);
         Some((part, angle))
@@ -91,10 +102,8 @@ pub fn on_event(
         Event::MouseButtonDown {
             x, y, mouse_btn, ..
         } => if mouse_btn == MouseButton::Left {
-            print!("({}, {}) -> ", x, y);
             let (x, y) = transform_coords(x, y, display.window().size(), &*state);
-            println!("({}, {})", x, y);
-            if !state.triangle || y > x {
+            if !(state.triangle && y < x) {
                 state.drag = SquarePart::from_coords(x, y);
             }
         },
@@ -105,22 +114,24 @@ pub fn on_event(
             x, y, xrel, yrel, ..
         } => {
             let (xmax, ymax) = display.window().size();
-            let xrel = xrel as f32 / xmax as f32;
-            let yrel = yrel as f32 / ymax as f32;
-            let (x, y) = (x as f32, y as f32);
-            if let Some((part, angle)) = state.drag {
+            let xrel = 2.0 * xrel as f32 / xmax as f32;
+            let yrel = -2.0 * yrel as f32 / ymax as f32;
+            let mag = magnitude(xrel, yrel);
+            let mut angle = yrel.atan2(xrel) - state.rotation;
+
+            if let Some((part, _)) = state.drag {
                 match part {
-                    SquarePart::Corner => {
-                        let dir = (y.atan2(x) - yrel.atan2(xrel)).signum();
-                        state.rotation += -x.signum() * dir / 60.0;
+                    SquarePart::Corner(corner_angle) => {
+                        let factor = (corner_angle - angle).cos();
+                        state.rotation += factor * mag;
                     }
-                    SquarePart::Edge => {
-                        let mag = (2.0 * (angle - yrel.atan2(xrel)).abs() / PI) - 1.0;
-                        state.scale *= 1.0 + mag / 50.0;
+                    SquarePart::Edge(edge_angle) => {
+                        let factor = (edge_angle - angle).cos();
+                        state.scale *= 1.0 + (factor * mag);
                     }
                     SquarePart::Middle => {
-                        state.offset.0 += 2.0 * xrel;
-                        state.offset.1 += -2.0 * yrel;
+                        state.offset.0 += xrel;
+                        state.offset.1 += yrel;
                     }
                 }
             }

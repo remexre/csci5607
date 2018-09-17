@@ -12,3 +12,7 @@ pub fn load_texture<P: AsRef<Path>>(path: P, display: &SDL2Facade) -> Result<Tex
     let texture = Texture2d::new(&*display, image)?;
     Ok(texture)
 }
+
+pub fn magnitude(x: f32, y: f32) -> f32 {
+    (x.powi(2) + y.powi(2)).sqrt()
+}

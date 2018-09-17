@@ -6,6 +6,5 @@ authors = ["Nathan Ringo <remexre@gmail.com>"]
 [dependencies]
 common = { path = "../common" }
 glium = "0.18.0"
-lazy_static = "1.1.0"
 log = "0.4.5"
 structopt = "0.2.10"

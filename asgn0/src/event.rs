@@ -72,6 +72,8 @@ pub fn on_event(
     match ev {
         Event::KeyDown { scancode, .. } => match scancode {
             Some(Scancode::A) => state.animate = !state.animate,
+            Some(Scancode::C) => state.color = !state.color,
+            Some(Scancode::L) => state.clear = !state.clear,
             Some(Scancode::Q) => state.running = false,
             Some(Scancode::R) => state.reset(),
             Some(Scancode::Minus) => state.scale *= 0.9,
@@ -151,8 +153,7 @@ fn transform_coords(x: i32, y: i32, max: (u32, u32), state: &State) -> (f32, f32
             state.rotation.sin(),
             -state.rotation.sin(),
             state.rotation.cos(),
-        ]
-            .into_iter()
+        ].into_iter()
             .cloned(),
     );
     let off = RowVector2::from_iterator([state.offset.0, state.offset.1].into_iter().cloned());

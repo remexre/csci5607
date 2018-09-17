@@ -23,6 +23,8 @@ pub struct Args {
 
 pub struct State {
     pub animate: bool,
+    pub clear: bool,
+    pub color: bool,
     pub drag: Option<(SquarePart, f32)>,
     pub running: bool,
 
@@ -58,6 +60,8 @@ pub fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<Stat
     let (w, h) = display.window().size();
     Ok(State {
         animate: false,
+        clear: true,
+        color: true,
         drag: None,
         running: true,
 

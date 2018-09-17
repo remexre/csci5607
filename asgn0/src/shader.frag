@@ -1,13 +1,19 @@
 #version 150 core
 
+uniform bool color;
 uniform sampler2D tex0;
 
 in vec3 link_color;
 in vec2 link_uv;
 
 void main() {
-	vec3 color = vec3(texture(tex0, link_uv).rgb);
-	color += link_color;
+	vec3 colorVec = vec3(texture(tex0, link_uv).rgb);
+	int colorComponents = 1;
 
-	gl_FragColor = vec4(color / 2, 1.0);
+	if(color) {
+		colorComponents++;
+		colorVec += link_color;
+	}
+
+	gl_FragColor = vec4(colorVec / colorComponents, 1.0);
 }

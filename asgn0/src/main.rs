@@ -33,6 +33,7 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
 
     let uniforms = uniform!{
         aspect_ratio: state.aspect_ratio,
+        color: state.color,
         off: [state.offset.0, state.offset.1],
         rotation: state.rotation,
         scale: state.scale,
@@ -43,7 +44,9 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
 
     let mut target = display.draw();
 
-    target.clear_color(1.0, 1.0, 1.0, 1.0);
+    if state.clear {
+        target.clear_color(1.0, 1.0, 1.0, 1.0);
+    }
     target
         .draw(
             &state.vbo,
@@ -51,7 +54,8 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
             &state.program,
             &uniforms,
             &Default::default(),
-        ).unwrap();
+        )
+        .unwrap();
 
     target.finish()?;
     Ok(state.running)

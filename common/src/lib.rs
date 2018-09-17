@@ -104,12 +104,12 @@ pub fn run_wrapper<FE, FI, FL, T, U>(
 }
 
 #[cfg(debug_assertions)]
-fn setup_panic() {}
-
-#[cfg(not(debug_assertions))]
 fn setup_panic() {
     setup_panic!();
 }
+
+#[cfg(not(debug_assertions))]
+fn setup_panic() {}
 
 struct Args<T> {
     /// Turns off message output.

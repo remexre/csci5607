@@ -110,9 +110,7 @@ pub fn on_event(
         Event::MouseButtonUp { mouse_btn, .. } if mouse_btn == MouseButton::Left => {
             state.drag = None;
         }
-        Event::MouseMotion {
-            x, y, xrel, yrel, ..
-        } => {
+        Event::MouseMotion { xrel, yrel, .. } => {
             let (xmax, ymax) = display.window().size();
             let xrel = 2.0 * xrel as f32 / xmax as f32;
             let yrel = -2.0 * yrel as f32 / ymax as f32;

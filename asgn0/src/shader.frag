@@ -1,5 +1,6 @@
 #version 150 core
 
+uniform float brightness;
 uniform bool color;
 uniform sampler2D tex0;
 
@@ -15,5 +16,6 @@ void main() {
 		colorVec += link_color;
 	}
 
+	colorVec *= brightness;
 	gl_FragColor = vec4(colorVec / colorComponents, 1.0);
 }

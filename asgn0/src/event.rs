@@ -76,6 +76,9 @@ pub fn on_event(
             Some(Scancode::L) => state.clear = !state.clear,
             Some(Scancode::Q) => state.running = false,
             Some(Scancode::R) => state.reset(),
+            Some(Scancode::T) => state.triangle = !state.triangle,
+            Some(Scancode::Comma) => state.brightness *= 0.9,
+            Some(Scancode::Period) => state.brightness *= 1.1,
             Some(Scancode::Minus) => state.scale *= 0.9,
             Some(Scancode::Equals) => state.scale *= 1.1,
             Some(Scancode::LeftBracket) => state.rotation += PI / 12.0,
@@ -92,7 +95,9 @@ pub fn on_event(
             print!("({}, {}) -> ", x, y);
             let (x, y) = transform_coords(x, y, display.window().size(), &*state);
             println!("({}, {})", x, y);
-            state.drag = SquarePart::from_coords(x, y);
+            if !state.triangle || y > x {
+                state.drag = SquarePart::from_coords(x, y);
+            }
         },
         Event::MouseButtonUp { mouse_btn, .. } if mouse_btn == MouseButton::Left => {
             state.drag = None;

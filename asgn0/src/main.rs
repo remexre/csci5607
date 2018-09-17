@@ -33,6 +33,7 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
 
     let uniforms = uniform!{
         aspect_ratio: state.aspect_ratio,
+        brightness: state.brightness,
         color: state.color,
         off: [state.offset.0, state.offset.1],
         rotation: state.rotation,
@@ -47,9 +48,15 @@ fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<b
     if state.clear {
         target.clear_color(1.0, 1.0, 1.0, 1.0);
     }
+
+    let vbo = if state.triangle {
+        &state.vbo_triangle
+    } else {
+        &state.vbo_square
+    };
     target
         .draw(
-            &state.vbo,
+            vbo,
             &state.indices,
             &state.program,
             &uniforms,

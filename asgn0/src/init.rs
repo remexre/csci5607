@@ -23,16 +23,19 @@ pub struct Args {
 
 pub struct State {
     pub animate: bool,
+    pub brightness: f32,
     pub clear: bool,
     pub color: bool,
     pub drag: Option<(SquarePart, f32)>,
     pub running: bool,
+    pub triangle: bool,
 
     pub aspect_ratio: f32,
     pub indices: NoIndices,
     pub program: Program,
     pub texture: Texture2d,
-    pub vbo: VertexBuffer<Vertex>,
+    pub vbo_square: VertexBuffer<Vertex>,
+    pub vbo_triangle: VertexBuffer<Vertex>,
 
     pub offset: (f32, f32),
     pub rotation: f32,
@@ -53,23 +56,27 @@ pub fn on_init(args: Args, _: &mut Sdl, display: &mut SDL2Facade) -> Result<Stat
     const VERT_SHADER_SRC: &str = include_str!("shader.vert");
     const FRAG_SHADER_SRC: &str = include_str!("shader.frag");
 
-    let vbo = VertexBuffer::new(&*display, MODEL)?;
+    let vbo_square = VertexBuffer::new(&*display, MODEL)?;
+    let vbo_triangle = VertexBuffer::new(&*display, &MODEL[..3])?;
     let indices = NoIndices(PrimitiveType::TrianglesList);
     let program = Program::from_source(&*display, VERT_SHADER_SRC, FRAG_SHADER_SRC, None).unwrap();
 
     let (w, h) = display.window().size();
     Ok(State {
         animate: false,
+        brightness: 1.0,
         clear: true,
         color: true,
         drag: None,
         running: true,
+        triangle: false,
 
         aspect_ratio: w as f32 / h as f32,
         indices,
         program,
         texture: load_texture(args.input, &*display)?,
-        vbo,
+        vbo_square,
+        vbo_triangle,
 
         offset: (0.0, 0.0),
         rotation: 0.0,

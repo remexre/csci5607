@@ -46,10 +46,6 @@ pub fn run_wrapper<FE, FI, FL, T, U>(
         }
     }
 
-    if options.verbose == 0 {
-        setup_panic();
-    }
-
     let run = || -> Result<(), Error> {
         let mut sdl = sdl2::init().map_err(err_msg)?;
         let video_subsystem = sdl.video().map_err(err_msg)?;
@@ -103,14 +99,6 @@ pub fn run_wrapper<FE, FI, FL, T, U>(
     }
 }
 
-#[cfg(debug_assertions)]
-fn setup_panic() {
-    setup_panic!();
-}
-
-#[cfg(not(debug_assertions))]
-fn setup_panic() {}
-
 struct Args<T> {
     /// Turns off message output.
     quiet: bool,
@@ -135,8 +123,7 @@ impl<T: StructOpt> StructOpt for Args<T> {
                     .help("Turns off message output.")
                     .short("q")
                     .long("quiet"),
-            )
-            .arg(
+            ).arg(
                 Arg::with_name("verbose")
                     .takes_value(false)
                     .multiple(true)

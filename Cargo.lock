@@ -54,6 +54,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "asgn1"
+version = "0.1.0"
+dependencies = [
+ "common 0.1.0",
+ "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "atty"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"

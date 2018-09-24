@@ -1,0 +1,9 @@
+[package]
+name = "asgn1"
+version = "0.1.0"
+authors = ["Nathan Ringo <remexre@gmail.com>"]
+
+[dependencies]
+common = { path = "../common" }
+log = "0.4.5"
+structopt = "0.2.10"

@@ -17,6 +17,7 @@ use vertex::{Vertex, MODEL};
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
+    /// The input filename.
     #[structopt(parse(from_os_str))]
     input: PathBuf,
 }

@@ -17,7 +17,7 @@ use common::{
         Surface,
     },
     glium_sdl2::SDL2Facade,
-    run_wrapper,
+    run_loop,
     sdl2::Sdl,
 };
 
@@ -25,7 +25,7 @@ use event::on_event;
 use init::{on_init, State};
 
 fn main() {
-    run_wrapper("asgn0", on_init, on_loop, on_event)
+    run_loop("asgn0", on_init, on_loop, on_event)
 }
 
 fn on_loop(state: &mut State, _: &mut Sdl, display: &mut SDL2Facade) -> Result<bool, Error> {

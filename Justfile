@@ -1,4 +1,4 @@
-all: check doc build-debug test
+all: check doc test build-release
 clean:
 	cargo clean
 watch TARGET="all":
@@ -19,6 +19,8 @@ doc:
 	cargo doc --all
 run ASGN +ARGS="":
 	cargo run --manifest-path={{ASGN}}/Cargo.toml -- {{ARGS}}
+run-release ASGN +ARGS="":
+	cargo run --manifest-path={{ASGN}}/Cargo.toml --release -- {{ARGS}}
 test:
 	cargo test --all
 

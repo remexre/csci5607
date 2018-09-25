@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate log;
-extern crate stderrlog;
 extern crate structopt;
 
 pub extern crate failure;
@@ -9,6 +8,7 @@ pub extern crate glium_sdl2;
 pub extern crate image;
 pub extern crate nalgebra;
 pub extern crate sdl2;
+pub extern crate stderrlog;
 
 pub mod helpers;
 #[macro_use]
@@ -24,29 +24,67 @@ use structopt::{
     StructOpt,
 };
 
-/// A wrapper for a graphics loop, including SDL and OpenGL initialization and event loop setup.
-///
-/// Also handles the SQL Quit event.
-pub fn run_wrapper<FE, FI, FL, T, U>(
-    name: &str,
-    init_func: FI,
-    mut loop_func: FL,
-    mut event_func: FE,
-) where
-    FE: FnMut(Event, &mut U, &mut Sdl, &mut SDL2Facade) -> Result<(), Error>,
-    FI: FnOnce(T, &mut Sdl, &mut SDL2Facade) -> Result<U, Error>,
-    FL: FnMut(&mut U, &mut Sdl, &mut SDL2Facade) -> Result<bool, Error>,
+/// Gets arguments and starts the logger.
+pub fn run<F, T>(run: F) -> !
+where
+    F: FnOnce(T) -> Result<(), Error>,
     T: StructOpt,
 {
     let options = Args::from_args();
     if !options.quiet {
         let r = ::stderrlog::new().verbosity(options.verbose).init();
         if let Err(err) = r {
-            error!("Warning: logging couldn't start: {}", err);
+            error!("Logging couldn't start: {}", err);
         }
     }
 
-    let run = || -> Result<(), Error> {
+    run_err(|| run(options.t))
+}
+
+/// A wrapper for error handling.
+pub fn run_err<F>(run: F) -> !
+where
+    F: FnOnce() -> Result<(), Error>,
+{
+    match run() {
+        Ok(()) => exit(0),
+        Err(err) => {
+            let mut first = true;
+            let num_errs = err.iter_chain().count();
+            if num_errs <= 1 {
+                error!("{}", err);
+            } else {
+                for cause in err.iter_chain() {
+                    if first {
+                        first = false;
+                        error!("           {}", cause);
+                    } else {
+                        error!("caused by: {}", cause);
+                    }
+                }
+            }
+            debug!("{}", err.backtrace());
+            exit(1);
+        }
+    }
+}
+
+/// A wrapper for a graphics loop, including SDL and OpenGL initialization and event loop setup.
+///
+/// Also handles the SQL Quit event.
+pub fn run_loop<FE, FI, FL, T, U>(
+    name: &str,
+    init_func: FI,
+    mut loop_func: FL,
+    mut event_func: FE,
+) -> !
+where
+    FE: FnMut(Event, &mut U, &mut Sdl, &mut SDL2Facade) -> Result<(), Error>,
+    FI: FnOnce(T, &mut Sdl, &mut SDL2Facade) -> Result<U, Error>,
+    FL: FnMut(&mut U, &mut Sdl, &mut SDL2Facade) -> Result<bool, Error>,
+    T: StructOpt,
+{
+    run(|options| {
         let mut sdl = sdl2::init().map_err(err_msg)?;
         let video_subsystem = sdl.video().map_err(err_msg)?;
         if !video_subsystem.gl_set_swap_interval(-1) {
@@ -64,7 +102,7 @@ pub fn run_wrapper<FE, FI, FL, T, U>(
             .resizable()
             .build_glium()?;
         let mut events = sdl.event_pump().map_err(err_msg)?;
-        let mut state = init_func(options.t, &mut sdl, &mut display)?;
+        let mut state = init_func(options, &mut sdl, &mut display)?;
         'main_loop: loop {
             if !loop_func(&mut state, &mut sdl, &mut display)? {
                 break Ok(());
@@ -77,26 +115,7 @@ pub fn run_wrapper<FE, FI, FL, T, U>(
                 }
             }
         }
-    };
-
-    if let Err(err) = run() {
-        let mut first = true;
-        let num_errs = err.iter_chain().count();
-        if num_errs <= 1 {
-            error!("{}", err);
-        } else {
-            for cause in err.iter_chain() {
-                if first {
-                    first = false;
-                    error!("           {}", cause);
-                } else {
-                    error!("caused by: {}", cause);
-                }
-            }
-        }
-        debug!("{}", err.backtrace());
-        exit(1);
-    }
+    })
 }
 
 struct Args<T> {
@@ -123,7 +142,8 @@ impl<T: StructOpt> StructOpt for Args<T> {
                     .help("Turns off message output.")
                     .short("q")
                     .long("quiet"),
-            ).arg(
+            )
+            .arg(
                 Arg::with_name("verbose")
                     .takes_value(false)
                     .multiple(true)

@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use util::SampleMode;
+
 /// The parsed arguments.
 #[derive(Debug)]
 pub struct Args {
@@ -12,6 +14,12 @@ pub struct Args {
 pub enum Filter {
     /// Writes out the current image.
     Output(PathBuf),
+
+    /// Pipes the image to a subprocess.
+    Pipe(String),
+
+    /// Sets the sampling mode.
+    Sample(SampleMode),
 
     /// Scales the image.
     Scale(f32, f32),
@@ -35,6 +43,19 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                 "-output" => {
                     let output: PathBuf = iter.next()?.as_ref().into();
                     filters.push(Filter::Output(output));
+                }
+                "-pipe" => {
+                    let command = iter.next()?.as_ref().to_string();
+                    filters.push(Filter::Pipe(command));
+                }
+                "-sample" => {
+                    let sample_mode = match iter.next()?.as_ref() {
+                        "bilinear" => SampleMode::Bilinear,
+                        "gaussian" => SampleMode::Gaussian,
+                        "point" => SampleMode::Point,
+                        _ => return None,
+                    };
+                    filters.push(Filter::Sample(sample_mode));
                 }
                 "-scale" => {
                     let x: f32 = iter.next()?.as_ref().parse().ok()?;

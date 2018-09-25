@@ -5,5 +5,6 @@ authors = ["Nathan Ringo <remexre@gmail.com>"]
 
 [dependencies]
 common = { path = "../common" }
+failure = "0.1.2"
 log = "0.4.5"
 structopt = "0.2.10"

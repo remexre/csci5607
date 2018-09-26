@@ -56,7 +56,7 @@ NOTES:
                 Filter::Output(path) => image.save(path)?,
                 Filter::Pipe(command) => pipe::filter(&image, command)?,
                 Filter::Sample(mode) => sample_mode = mode,
-                Filter::Scale(x, y) => scale::filter(&mut image, sample_mode, x, y),
+                Filter::Scale(x, y) => image = scale::filter(&image, sample_mode, x, y),
             }
             let time = start.elapsed();
             debug!("Took {}s{}ms", time.as_secs(), time.subsec_millis());

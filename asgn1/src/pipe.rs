@@ -5,7 +5,9 @@ use common::{
     image::{jpeg::JPEGEncoder, ColorType, RgbaImage},
 };
 
-pub fn filter(image: &RgbaImage, command: String) -> Result<(), Error> {
+use util::Image;
+
+pub fn filter(image: &Image, command: String) -> Result<(), Error> {
     let (shell, arg0) = if cfg!(target_os = "windows") {
         ("cmd", "/C")
     } else {
@@ -18,8 +20,9 @@ pub fn filter(image: &RgbaImage, command: String) -> Result<(), Error> {
         .spawn()?;
 
     let mut stdin = child.stdin.take().unwrap();
+    let image: RgbaImage = image.clone().into();
     JPEGEncoder::new(&mut stdin).encode(
-        image,
+        &image,
         image.width(),
         image.height(),
         ColorType::RGBA(8),

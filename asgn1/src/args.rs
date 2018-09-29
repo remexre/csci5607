@@ -12,6 +12,9 @@ pub struct Args {
 /// A transformation to apply to an image.
 #[derive(Debug)]
 pub enum Filter {
+    /// Edge detection.
+    EdgeDetect,
+
     /// Writes out the current image.
     Output(PathBuf),
 
@@ -40,6 +43,9 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
         if let Some(s) = iter.next() {
             let s = s.as_ref();
             match s {
+                "-edge-detect" => {
+                    filters.push(Filter::EdgeDetect);
+                }
                 "-output" => {
                     let output: PathBuf = iter.next()?.as_ref().into();
                     filters.push(Filter::Output(output));

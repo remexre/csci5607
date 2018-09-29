@@ -5,6 +5,7 @@ extern crate failure;
 extern crate log;
 
 mod args;
+mod convolve;
 mod pipe;
 mod scale;
 mod util;
@@ -13,11 +14,14 @@ use std::env::args;
 use std::process::exit;
 use std::time::Instant;
 
-use common::{image::open as open_image, run_err};
+use common::{
+    image::{open as open_image, RgbaImage},
+    run_err,
+};
 
 use args::Filter;
 
-use util::SampleMode;
+use util::{Image, SampleMode};
 
 fn main() {
     ::common::stderrlog::new().verbosity(3).init().ok();
@@ -30,6 +34,7 @@ fn main() {
             );
             const USAGE: &str = r#"
 FILTERS:
+    -edge-detect        Runs an edge-detection filter.
     -output PATH        Writes the current state of the image to the given path.
     -pipe COMMAND       Pipes the image as a JPEG to the given command.
     -sample bilinear    Sets sampling mode to bilinear.
@@ -46,14 +51,23 @@ NOTES:
     };
 
     run_err(move || {
-        let mut image = open_image(args.input)?.to_rgba();
+        let mut image: Image = open_image(args.input)?.to_rgba().into();
         let mut sample_mode = SampleMode::Point;
 
         for filter in args.filters {
             debug!("Applying {:?}...", filter);
             let start = Instant::now();
             match filter {
-                Filter::Output(path) => image.save(path)?,
+                Filter::EdgeDetect => {
+                    image = convolve::filter(
+                        &image,
+                        [[-1.0, -1.0, -1.0], [-1.0, 8.0, -1.0], [-1.0, -1.0, -1.0]],
+                    )
+                }
+                Filter::Output(path) => {
+                    let image: RgbaImage = (&image).into();
+                    image.save(path)?
+                }
                 Filter::Pipe(command) => pipe::filter(&image, command)?,
                 Filter::Sample(mode) => sample_mode = mode,
                 Filter::Scale(x, y) => image = scale::filter(&image, sample_mode, x, y),

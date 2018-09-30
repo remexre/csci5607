@@ -12,14 +12,32 @@ pub struct Args {
 /// A transformation to apply to an image.
 #[derive(Debug)]
 pub enum Filter {
-    /// Edge detection.
-    EdgeDetect,
+    /// Sets the color to white if the luminosity is greater than the given parameter.
+    BlackWhiteLuminosity(f32),
+
+    /// A gaussian blur.
+    Blur,
+
+    /// Extracts a channel.
+    Channel(usize),
+
+    /// The basic convolution used in edge detection.
+    EdgeDetectBase,
+
+    /// Grayscale conversion.
+    Grayscale,
+
+    /// Shifts the hue by the given amount (0.0, 1.0 == identity).
+    HueShift(f32),
 
     /// Writes out the current image.
     Output(PathBuf),
 
     /// Pipes the image to a subprocess.
     Pipe(String),
+
+    /// Quantitizes an image to the given maximum value.
+    Quantitize(usize),
 
     /// Sets the sampling mode.
     Sample(SampleMode),
@@ -43,8 +61,33 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
         if let Some(s) = iter.next() {
             let s = s.as_ref();
             match s {
+                "-blur" => {
+                    filters.push(Filter::Blur);
+                }
+                "-channel" => {
+                    let ch = match iter.next()?.as_ref() {
+                        "red" => 0,
+                        "green" => 1,
+                        "blue" => 2,
+                        _ => return None,
+                    };
+                    filters.push(Filter::Channel(ch));
+                }
                 "-edge-detect" => {
-                    filters.push(Filter::EdgeDetect);
+                    filters.push(Filter::Blur);
+                    filters.push(Filter::Grayscale);
+                    filters.push(Filter::EdgeDetectBase);
+                    filters.push(Filter::BlackWhiteLuminosity(0.1));
+                }
+                "-edge-detect-base" => {
+                    filters.push(Filter::EdgeDetectBase);
+                }
+                "-grayscale" => {
+                    filters.push(Filter::Grayscale);
+                }
+                "-hue-shift" => {
+                    let amount = iter.next()?.as_ref().parse().ok()?;
+                    filters.push(Filter::HueShift(amount));
                 }
                 "-output" => {
                     let output: PathBuf = iter.next()?.as_ref().into();
@@ -53,6 +96,13 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                 "-pipe" => {
                     let command = iter.next()?.as_ref().to_string();
                     filters.push(Filter::Pipe(command));
+                }
+                "-quantitise" | "-quantitize" | "--quantitise" | "--quantitize" => {
+                    let amt: usize = iter.next()?.as_ref().parse().ok()?;
+                    if amt == 0 {
+                        return None;
+                    }
+                    filters.push(Filter::Quantitize(amt));
                 }
                 "-sample" => {
                     let sample_mode = match iter.next()?.as_ref() {

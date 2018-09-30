@@ -7,6 +7,7 @@ pub extern crate glium;
 pub extern crate glium_sdl2;
 pub extern crate image;
 pub extern crate nalgebra;
+pub extern crate rayon;
 pub extern crate sdl2;
 pub extern crate stderrlog;
 
@@ -142,8 +143,7 @@ impl<T: StructOpt> StructOpt for Args<T> {
                     .help("Turns off message output.")
                     .short("q")
                     .long("quiet"),
-            )
-            .arg(
+            ).arg(
                 Arg::with_name("verbose")
                     .takes_value(false)
                     .multiple(true)

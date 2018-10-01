@@ -21,6 +21,9 @@ pub enum Filter {
     /// Extracts a channel.
     Channel(usize),
 
+    /// Changes the contrast by a factor.
+    Contrast(f32),
+
     /// The basic convolution used in edge detection.
     EdgeDetectBase,
 
@@ -44,6 +47,9 @@ pub enum Filter {
 
     /// Scales the image.
     Scale(f32, f32),
+
+    /// Sharpens an image by applying a gaussian blur and then extrapolating.
+    Sharpen,
 }
 
 /// Parses the command-line arguments.
@@ -72,6 +78,10 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                         _ => return None,
                     };
                     filters.push(Filter::Channel(ch));
+                }
+                "-contrast" => {
+                    let factor = iter.next()?.as_ref().parse().ok()?;
+                    filters.push(Filter::Contrast(factor));
                 }
                 "-edge-detect" => {
                     filters.push(Filter::Blur);
@@ -117,6 +127,9 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                     let x: f32 = iter.next()?.as_ref().parse().ok()?;
                     let y: f32 = iter.next()?.as_ref().parse().ok()?;
                     filters.push(Filter::Scale(x, y));
+                }
+                "-sharpen" => {
+                    filters.push(Filter::Sharpen);
                 }
                 _ => break None,
             }

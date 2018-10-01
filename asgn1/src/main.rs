@@ -5,6 +5,7 @@ extern crate failure;
 extern crate log;
 
 mod args;
+mod blur;
 mod convolve;
 mod pipe;
 mod scale;
@@ -16,12 +17,13 @@ use std::time::Instant;
 
 use common::{
     image::{open as open_image, RgbaImage},
+    rayon::prelude::*,
     run_err,
 };
 
 use args::Filter;
 
-use util::{transform_as_hsv, Image, Pixel, SampleMode};
+use util::{polate, transform_as_hsv, Image, Pixel, SampleMode};
 
 fn main() {
     ::common::stderrlog::new().verbosity(3).init().ok();
@@ -71,14 +73,7 @@ NOTES:
                     })
                 }
                 Filter::Blur => {
-                    image = convolve::filter(
-                        &image,
-                        [
-                            [1.0 / 16.0, 1.0 / 8.0, 1.0 / 16.0],
-                            [1.0 / 8.0, 1.0 / 4.0, 1.0 / 8.0],
-                            [1.0 / 16.0, 1.0 / 8.0, 1.0 / 16.0],
-                        ],
-                    )
+                    image = blur::filter(&image);
                 }
                 Filter::Channel(ch) => {
                     let (w, h) = image.dims();
@@ -88,6 +83,17 @@ NOTES:
                         m[ch] = 1.0;
                         Pixel([r * m[0], g * m[1], b * m[2], a])
                     })
+                }
+                Filter::Contrast(f) => {
+                    let (w, h) = image.dims();
+                    let sum: Pixel = (0..h)
+                        .into_par_iter()
+                        .flat_map(|y| {
+                            let image = &image;
+                            (0..w).into_par_iter().map(move |x| image[(x, y)])
+                        }).sum();
+                    let avg = sum * (w as f32 * h as f32).recip();
+                    image = Image::from_fn(w, h, |x, y| polate(image[(x, y)], avg, f));
                 }
                 Filter::EdgeDetectBase => {
                     image = convolve::filter(
@@ -140,6 +146,11 @@ NOTES:
                 }
                 Filter::Sample(mode) => sample_mode = mode,
                 Filter::Scale(x, y) => image = scale::filter(&image, sample_mode, x, y),
+                Filter::Sharpen => {
+                    let (w, h) = image.dims();
+                    let blur = blur::filter(&image);
+                    image = Image::from_fn(w, h, |x, y| polate(image[(x, y)], blur[(x, y)], -1.0));
+                }
             }
             let time = start.elapsed();
             debug!("Took {}s{}ms", time.as_secs(), time.subsec_millis());

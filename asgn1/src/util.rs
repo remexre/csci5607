@@ -1,9 +1,21 @@
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign};
+use std::iter::Sum;
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg};
 
 use common::{
     image::{Rgba, RgbaImage},
     rayon::prelude::*,
 };
+
+/// Inter/extra-polates.
+pub fn polate<T>(from: T, to: T, f: f32) -> T
+where
+    T: Add<Output = T>,
+    T: Copy,
+    T: Neg<Output = T>,
+    T: Mul<f32, Output = T>,
+{
+    (to + -from) * f + from
+}
 
 pub fn transform_as_hsv<F>(pixel: Pixel, f: F) -> Pixel
 where
@@ -230,5 +242,35 @@ impl MulAssign<f32> for Pixel {
         self.0[1] *= n;
         self.0[2] *= n;
         self.0[3] *= n;
+    }
+}
+
+impl Neg for Pixel {
+    type Output = Pixel;
+    fn neg(mut self) -> Pixel {
+        self.0[0] = -self.0[0];
+        self.0[1] = -self.0[1];
+        self.0[2] = -self.0[2];
+        self.0[3] = -self.0[3];
+        self
+    }
+}
+
+impl Sum for Pixel {
+    fn sum<I>(iter: I) -> Pixel
+    where
+        I: Iterator<Item = Pixel>,
+    {
+        let mut sr = 0.0;
+        let mut sg = 0.0;
+        let mut sb = 0.0;
+        let mut sa = 0.0;
+        iter.for_each(|Pixel([r, g, b, a])| {
+            sr += r;
+            sg += g;
+            sb += b;
+            sa += a;
+        });
+        Pixel([sr, sg, sb, sa])
     }
 }

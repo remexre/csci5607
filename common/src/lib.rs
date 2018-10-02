@@ -3,10 +3,12 @@ extern crate log;
 extern crate structopt;
 
 pub extern crate failure;
+pub extern crate float_ord;
 pub extern crate glium;
 pub extern crate glium_sdl2;
 pub extern crate image;
 pub extern crate nalgebra;
+pub extern crate rand;
 pub extern crate rayon;
 pub extern crate sdl2;
 pub extern crate stderrlog;

@@ -18,20 +18,26 @@ pub enum Filter {
     /// A gaussian blur.
     Blur,
 
+    /// Brightens the image.
+    Brighten(f32),
+
     /// Extracts a channel.
     Channel(usize),
 
     /// Changes the contrast by a factor.
     Contrast(f32),
 
+    /// Crops an image.
+    Crop(f32, f32, u32, u32),
+
     /// The basic convolution used in edge detection.
     EdgeDetectBase,
 
+    /// Changes the number of bits per channel with Floyd-Steinberg dithering.
+    FloydSteinbergDither(u8),
+
     /// Grayscale conversion.
     Grayscale,
-
-    /// Shifts the hue by the given amount (0.0, 1.0 == identity).
-    HueShift(f32),
 
     /// Writes out the current image.
     Output(PathBuf),
@@ -39,11 +45,20 @@ pub enum Filter {
     /// Pipes the image to a subprocess.
     Pipe(String),
 
-    /// Quantitizes an image to the given maximum value.
-    Quantitize(usize),
+    /// Changes the number of bits per channel.
+    Quantitize(u8),
+
+    /// Adds random noise.
+    RandomNoise,
+
+    /// Rotates the image counter-clockwise by the given angle.
+    Rotate(f32),
 
     /// Sets the sampling mode.
     Sample(SampleMode),
+
+    /// Changes the saturation by a factor.
+    Saturation(f32),
 
     /// Scales the image.
     Scale(f32, f32),
@@ -70,6 +85,10 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                 "-blur" => {
                     filters.push(Filter::Blur);
                 }
+                "-brighten" => {
+                    let f = iter.next()?.as_ref().parse().ok()?;
+                    filters.push(Filter::Brighten(f));
+                }
                 "-channel" => {
                     let ch = match iter.next()?.as_ref() {
                         "red" => 0,
@@ -83,6 +102,13 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                     let factor = iter.next()?.as_ref().parse().ok()?;
                     filters.push(Filter::Contrast(factor));
                 }
+                "-crop" => {
+                    let top = iter.next()?.as_ref().parse().ok()?;
+                    let left = iter.next()?.as_ref().parse().ok()?;
+                    let width = iter.next()?.as_ref().parse().ok()?;
+                    let height = iter.next()?.as_ref().parse().ok()?;
+                    filters.push(Filter::Crop(top, left, width, height));
+                }
                 "-edge-detect" => {
                     filters.push(Filter::Blur);
                     filters.push(Filter::Grayscale);
@@ -92,12 +118,12 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                 "-edge-detect-base" => {
                     filters.push(Filter::EdgeDetectBase);
                 }
+                "-floyd-steinberg-dither" => {
+                    let bits = iter.next()?.as_ref().parse().ok()?;
+                    filters.push(Filter::FloydSteinbergDither(bits));
+                }
                 "-grayscale" => {
                     filters.push(Filter::Grayscale);
-                }
-                "-hue-shift" => {
-                    let amount = iter.next()?.as_ref().parse().ok()?;
-                    filters.push(Filter::HueShift(amount));
                 }
                 "-output" => {
                     let output: PathBuf = iter.next()?.as_ref().into();
@@ -107,12 +133,27 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                     let command = iter.next()?.as_ref().to_string();
                     filters.push(Filter::Pipe(command));
                 }
-                "-quantitise" | "-quantitize" | "--quantitise" | "--quantitize" => {
-                    let amt: usize = iter.next()?.as_ref().parse().ok()?;
-                    if amt == 0 {
+                "-quantitise" | "-quantitize" => {
+                    let bits: u8 = iter.next()?.as_ref().parse().ok()?;
+                    if bits == 0 {
                         return None;
                     }
-                    filters.push(Filter::Quantitize(amt));
+                    filters.push(Filter::Quantitize(bits));
+                }
+                "-random-dither" => {
+                    let bits = iter.next()?.as_ref().parse().ok()?;
+                    if bits == 0 {
+                        return None;
+                    }
+                    filters.push(Filter::RandomNoise);
+                    filters.push(Filter::Quantitize(bits));
+                }
+                "-random-noise" => {
+                    filters.push(Filter::RandomNoise);
+                }
+                "-rotate" => {
+                    let angle = iter.next()?.as_ref().parse().ok()?;
+                    filters.push(Filter::Rotate(angle));
                 }
                 "-sample" => {
                     let sample_mode = match iter.next()?.as_ref() {
@@ -122,6 +163,10 @@ pub fn parse<I: IntoIterator<Item = S>, S: AsRef<str>>(iter: I) -> Option<Args> 
                         _ => return None,
                     };
                     filters.push(Filter::Sample(sample_mode));
+                }
+                "-saturation" => {
+                    let factor = iter.next()?.as_ref().parse().ok()?;
+                    filters.push(Filter::Saturation(factor));
                 }
                 "-scale" => {
                     let x: f32 = iter.next()?.as_ref().parse().ok()?;

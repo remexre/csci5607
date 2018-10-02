@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use std::iter::Sum;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg};
 
@@ -17,52 +18,20 @@ where
     (to + -from) * f + from
 }
 
-pub fn transform_as_hsv<F>(pixel: Pixel, f: F) -> Pixel
+pub fn transform_as_yuv<F>(pixel: Pixel, f: F) -> Pixel
 where
     F: FnOnce(f32, f32, f32) -> (f32, f32, f32),
 {
     let Pixel([r, g, b, a]) = pixel;
-    let max_color = r.max(g).max(b);
-    let min_color = r.min(g).min(b);
-    let chroma = max_color - min_color;
+    let y = 0.299 * r + 0.587 * g + 0.114 * b;
+    let u = 0.492 * (b - y);
+    let v = 0.877 * (r - y);
 
-    // TODO: Is this safe? I think so, but I haven't taken numerical.
-    let h = if chroma == 0.0 {
-        0.0
-    } else {
-        // TODO: This feels incorrect...
-        (1.0 / (6.0 * chroma)) * if max_color == r {
-            g - b
-        } else if max_color == g {
-            b - r
-        } else {
-            r - g
-        }
-    };
-    let s = if max_color == 0.0 {
-        0.0
-    } else {
-        chroma / max_color
-    };
+    let (y, u, v) = f(y, u, v);
 
-    let (h, s, v) = f(h, s, max_color);
-
-    let h_prime = h * 6.0;
-    let c = s * v;
-    let x = c * (1.0 - (((h * 6.0) % 2.0) - 1.0).abs());
-    let (r, g, b) = if 0.0 <= h_prime && h_prime <= 1.0 {
-        (c, x, 0.0)
-    } else if 1.0 < h_prime && h_prime <= 2.0 {
-        (x, c, 0.0)
-    } else if 2.0 < h_prime && h_prime <= 3.0 {
-        (0.0, c, x)
-    } else if 3.0 < h_prime && h_prime <= 4.0 {
-        (0.0, x, c)
-    } else if 4.0 < h_prime && h_prime <= 5.0 {
-        (x, 0.0, c)
-    } else {
-        (c, 0.0, x)
-    };
+    let r = y + 1.14 * v;
+    let g = y - 0.395 * u - 0.581 * v;
+    let b = y + 2.033 * u;
     Pixel([r, g, b, a])
 }
 
@@ -119,15 +88,47 @@ impl Image {
 
     /// Samples the image at the given point.
     pub fn sample(&self, mode: SampleMode, x: f32, y: f32) -> Pixel {
-        match mode {
-            SampleMode::Bilinear => unimplemented!(),
-            SampleMode::Gaussian => unimplemented!(),
-            SampleMode::Point => {
-                let x = x.round() as u32;
-                let y = y.round() as u32;
-
+        let (w, h) = self.dims();
+        let pt_samp = |x: f32, y: f32| {
+            let x = x.round() as u32;
+            let y = y.round() as u32;
+            if x >= w || y >= h {
+                Pixel::BLACK
+            } else {
                 self[(x, y)]
             }
+        };
+
+        match mode {
+            SampleMode::Bilinear => {
+                let ul = pt_samp(x, y);
+                let ur = pt_samp(x + 1.0, y);
+                let ll = pt_samp(x, y + 1.0);
+                let lr = pt_samp(x + 1.0, y + 1.0);
+                let x = x.fract();
+                let y = y.fract();
+                ul * (1.0 - x) * (1.0 - y) + ur * x * (1.0 - y) + ll * (1.0 - x) * y + lr * x * y
+            }
+            SampleMode::Gaussian => {
+                let gauss = |x: f32| (-x.powi(2) / 2.0).exp() / (2.0 * PI).sqrt();
+                let mut px = Pixel::default();
+                let mut n = 0.0;
+                for xo in -2..=2i32 {
+                    for yo in -2..=2i32 {
+                        let xo = xo as f32;
+                        let yo = yo as f32;
+                        let d = (xo.powi(2) + yo.powi(2)).sqrt();
+                        let g = gauss(d) / 2.4610448;
+                        n += g;
+                        px += pt_samp(x + xo, y + yo) * g;
+                    }
+                }
+                if n > 1.0 {
+                    println!("{}", n);
+                }
+                px
+            }
+            SampleMode::Point => pt_samp(x, y),
         }
     }
 }
@@ -199,14 +200,17 @@ impl<'a> Into<RgbaImage> for &'a Image {
 pub struct Pixel(pub [f32; 4]);
 
 impl Pixel {
+    /// A solid black pixel.
+    pub const BLACK: Pixel = Pixel([0.0, 0.0, 0.0, 1.0]);
+
     /// Normalizes the pixel.
     pub fn normalize(self) -> Pixel {
-        let [r, g, b, a] = self.0;
+        let [r, g, b, _] = self.0;
         Pixel([
             r.max(0.0).min(1.0),
             g.max(0.0).min(1.0),
             b.max(0.0).min(1.0),
-            a.max(0.0).min(1.0),
+            1.0,
         ])
     }
 }

@@ -1,6 +1,5 @@
 use util::{Image, Pixel};
 
-/// TODO: What to do for edges? rn, trims a pixel from each edge...
 pub fn filter(image: &Image, matrix: [[f32; 3]; 3]) -> Image {
     let (w, h) = image.dims();
     Image::from_fn(w, h, |x, y| {

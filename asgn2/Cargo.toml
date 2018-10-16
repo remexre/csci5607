@@ -1,0 +1,33 @@
+[package]
+authors = ["Nathaniel Ringo <remexre@gmail.com>"]
+autobins = false
+name = "raytracer"
+version = "0.1.0"
+
+[[bin]]
+doc = false
+name = "raytracer"
+path = "src/bin/main.rs"
+
+[dependencies]
+cgmath = "0.15.0"
+clap = "2.26.2"
+float-ord = "0.1.2"
+image = "0.16.0"
+log = "0.3.8"
+nom = "3.2.0"
+
+[dependencies.rayon]
+optional = true
+version = "0.8.2"
+
+[dependencies.sdl2]
+features = ["image", "ttf"]
+optional = true
+version = "0.30.0"
+
+[features]
+default = ["rayon", "sdl2"]
+
+[profile.release]
+debug = true

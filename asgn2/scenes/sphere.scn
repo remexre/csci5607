@@ -1,0 +1,11 @@
+# An example scene
+# The camera settings
+camera 0 0 0 0 0 1 0 1 0 45
+film_resolution 1920 1080
+output_image example.png
+
+# The scene
+material 1 1 1 1 1 1 0 0 0 5 0 0 0 1
+sphere 0 0 2 1
+ambient_light .1 .1 .1
+background 0 0 0

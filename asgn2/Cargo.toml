@@ -28,6 +28,3 @@ version = "0.30.0"
 
 [features]
 default = ["rayon", "sdl2"]
-
-[profile.release]
-debug = true

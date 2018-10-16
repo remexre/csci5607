@@ -1,4 +1,4 @@
-use cgmath::{InnerSpace, Vector3};
+use cgmath::Vector3;
 
 use material::Material;
 use ray::Ray;
@@ -19,18 +19,7 @@ pub struct Plane {
 
 impl Renderable for Plane {
     fn collides_with(&self, ray: Ray) -> Option<f32> {
-        let denom = self.normal.dot(ray.direction);
-        if denom == 0.0 {
-            None
-        } else {
-            let numer = self.normal.dot(self.point - ray.origin);
-            let dist = numer / denom;
-            if dist >= 0.0 {
-                Some(dist)
-            } else {
-                None
-            }
-        }
+        ray.collide_plane(self.point, self.normal)
     }
 
     fn material(&self) -> Material {
@@ -38,7 +27,7 @@ impl Renderable for Plane {
     }
 
     fn normal_at(&self, _pos: Vector3<f32>) -> Vector3<f32> {
-        // TODO: Should this fail is pos isn't on the plane?
+        // TODO: Should this fail if pos isn't on the plane?
         self.normal
     }
 }
